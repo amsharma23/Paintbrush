@@ -27,16 +27,19 @@ volume_file = "/Users/amansharma/Documents/Data/Mitochondria_masked/sizes.csv"
 try:
     # Read the CSV file into a DataFrame
     volume_array = pd.read_csv(volume_file)
-    
+    print(volume_array)
 except FileNotFoundError:
     print(f"The file '{volume_file}' could not be found.")
 except Exception as e:
     print(f"An error occurred: {e}")
 cell_wise_dict =[]
 
+df = pd.DataFrame(columns=['no. of nodes','degree of nodes','average degree of nodes','volume','length','number of connected components','component properties','mother volume','bud volume','no. of loops'])
+
+
 for i in range(1,1269):
     
-    #keys = ['no. of nodes','degree of nodes','average degree of nodes','volume','length','number of connected components','component properties','mother volume','bud volume']
+    #keys = ['no. of nodes','degree of nodes','average degree of nodes','volume','length','number of connected components','component properties','mother volume','bud volume','no. of loops']
     
     dction = {} 
     
@@ -52,12 +55,16 @@ for i in range(1,1269):
             rows1 = [line.split() for line in file]
         
         degrees = np.zeros((int(rows1[0][0]),1))
-                
+        loops =0        
         #count the degree of each node
         for row_n,row in enumerate(rows1[1:]):
                 node_num = np.array(row).astype(float)
-                degrees[int(node_num[0])] += 1
-                degrees[int(node_num[1])] += 1
+                if(node_num[0]!=node_num[1]): #for loops the same node connected to itself 
+                    degrees[int(node_num[0])] += 1
+                    degrees[int(node_num[1])] += 1
+                else:
+                    loops+=1
+                
         avg = np.average(degrees)
             
         with open(mitograph_path, 'r') as file:
@@ -80,8 +87,9 @@ for i in range(1,1269):
         
         
         
-        dction['component properties'] = comp_props    
-        dction['degree of nodes'] = degrees
+        #dction['component properties'] = comp_props    #
+        #dction['degree of nodes'] = degrees  #
+        dction['no. of loops'] = loops
         dction['average degree of nodes'] = avg
         dction['no. of nodes'] = rows[6][5]
         dction['volume'] = rows[6][0]
@@ -89,9 +97,10 @@ for i in range(1,1269):
         dction['number of connected components'] = int(num_comps)    
         dction['mother volume'] = volume_array.loc[i,'MotherVol(um3)']
         dction['bud volume'] = volume_array.loc[i,'BudVol(um3)']
-            
+        output= pd.DataFrame([dction])
         cell_wise_dict.append(dction)
-            
+        df = pd.concat([df, output], ignore_index=True)
+        df.to_csv('sizes_analyzed.csv', encoding='utf-8')
     except FileNotFoundError:
         print(f"The file '{mitograph_path}' could not be found.")
     except Exception as e:
@@ -120,4 +129,10 @@ dumped = json.dumps(cell_wise_dict, cls=NumpyEncoder)
 with open(save_path,'w') as json_file:
     json.dump(dumped, json_file)
 
-#%%
+
+#%% JSON to 
+
+
+#output= pd.DataFrame([{ ‘MotherVol’:mother_size,‘BudVol’:bud_size}])
+#df = pd.concat([df, output], ignore_index=True)
+#df.to_csv(str(“sizes”)+“.csv”, encoding=‘utf-8’)
