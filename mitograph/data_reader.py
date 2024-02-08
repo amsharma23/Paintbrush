@@ -18,6 +18,8 @@ from os import walk
 from os import listdir
 from os.path import isfile, join
 from tqdm import tqdm
+
+import json
 #%% Make a dictionary with the data
 fld_path = "/Users/amansharma/Documents/Data/Mitochondria_masked/"
 volume_file = "/Users/amansharma/Documents/Data/Mitochondria_masked/sizes.csv"
@@ -97,3 +99,25 @@ for i in range(1,1269):
     
 
 
+# saving json solution from: https://stackoverflow.com/questions/26646362/numpy-array-is-not-json-serializable
+
+save_path = "/Users/amansharma/Documents/Data/Mitochondria_masked/"+"Cell_wise_Network_prop.json"
+
+class NumpyEncoder(json.JSONEncoder):
+    """ Special json encoder for numpy types """
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
+
+dumped = json.dumps(cell_wise_dict, cls=NumpyEncoder)
+
+
+with open(save_path,'w') as json_file:
+    json.dump(dumped, json_file)
+
+#%%
