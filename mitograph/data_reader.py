@@ -42,7 +42,7 @@ for i in range(1,1269):
     
     mitograph_path = join(fld_path,str(i)+"/"+str(i)+".mitograph")  # Replace with the path to your text file
     nodes_path = join(fld_path,str(i)+"/"+str(i)+".gnet")
-    comp_wise_path = join(fld_path,str(i)+"/"+str(i)+".cc")
+    #comp_wise_path = join(fld_path,str(i)+"/"+str(i)+".cc")
     
     try:
         with open(nodes_path, 'r') as file:
@@ -60,25 +60,31 @@ for i in range(1,1269):
             
         with open(mitograph_path, 'r') as file:
             # Read the file line by line
-            rows = [line.split() for line in file]    
-            
-        with open(comp_wise_path, 'r') as file:
-            # Read the file line by line
-            rows2 = [line.split() for line in file]    
+            rows = [line.split() for line in file]
             
         
+        #component wise volume, number of nodes and avergae degree of nodes    
+        num_comps = int(rows[6][7])
+        comp_props = []     
         
-        
-        
-        
-        
+        for i in range(num_comps):
+            # volume of component
+            #number of nodes
+            l = [rows[11+i][3],rows[11+i][0]]
+             
             
+            comp_props.append(l)
+        
+        
+        
+        
+        dction['component properties'] = comp_props    
         dction['degree of nodes'] = degrees
         dction['average degree of nodes'] = avg
         dction['no. of nodes'] = rows[6][5]
         dction['volume'] = rows[6][0]
         dction['length'] = rows[6][3]
-        dction['number of connected components'] = rows[6][7]    
+        dction['number of connected components'] = int(num_comps)    
         dction['mother volume'] = volume_array.loc[i,'MotherVol(um3)']
         dction['bud volume'] = volume_array.loc[i,'BudVol(um3)']
             
@@ -91,4 +97,3 @@ for i in range(1,1269):
     
 
 
-print(len(cell_wise_dict))
