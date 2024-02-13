@@ -30,9 +30,9 @@ import networkx as nx
 
 import json
 #%% Make a dictionary with the data
-fld_path = "/Users/amansharma/Documents/Data/Mitochondria_masked/"
-volume_file = "/Users/amansharma/Documents/Data/Mitochondria_masked/sizes.csv"
-
+fld_path = "/Users/amansharma/Documents/Data/Saransh_mito_data/Mitochondria_masked_Ethnol/"
+#volume_file = "/Users/amansharma/Documents/Data/Mitochondria_masked/sizes.csv"
+"""
 try:
     # Read the CSV file into a DataFrame
     volume_array = pd.read_csv(volume_file)
@@ -41,12 +41,12 @@ except FileNotFoundError:
     print(f"The file '{volume_file}' could not be found.")
 except Exception as e:
     print(f"An error occurred: {e}")
+"""
 cell_wise_dict =[]
-
 df = pd.DataFrame(columns=['no. of nodes','degree of nodes','average degree of nodes','volume','length','number of connected components','component properties','MotherVol(um3)','BudVol(um3)','no. of loops','label'])
 
 
-for j in range(1,1269):
+for j in range(1,2021):
     
     #keys = ['no. of nodes','degree of nodes','average degree of nodes','volume','length','number of connected components','component properties','mother volume','bud volume','no. of loops']
     
@@ -71,8 +71,7 @@ for j in range(1,1269):
                 if(node_num[0]!=node_num[1]): #for loops the same node connected to itself 
                     degrees[int(node_num[0])] += 1
                     degrees[int(node_num[1])] += 1
-                else:
-                    loops+=1
+                
                 
         avg = np.average(degrees)
             
@@ -98,20 +97,20 @@ for j in range(1,1269):
         
         #dction['component properties'] = comp_props    #
         #dction['degree of nodes'] = degrees  #
-        dction['no. of loops'] = loops
+    
         dction['average degree of nodes'] = avg
         dction['no. of nodes'] = rows[6][5]
         dction['volume'] = rows[6][0]
         dction['length'] = rows[6][3]
         dction['number of connected components'] = int(num_comps)    
-        dction['MotherVol(um3)'] = volume_array.loc[j,'MotherVol(um3)']
-        dction['BudVol(um3)'] = volume_array.loc[j,'BudVol(um3)']
+        #dction['MotherVol(um3)'] = volume_array.loc[j,'MotherVol(um3)']
+        #dction['BudVol(um3)'] = volume_array.loc[j,'BudVol(um3)']
         #print(j)
         dction['label'] = str(j)
         output= pd.DataFrame([dction])
         cell_wise_dict.append(dction)
         df = pd.concat([df, output], ignore_index=True)
-        df.to_csv('sizes_analyzed.csv', encoding='utf-8')
+        df.to_csv(os.path.join(fld_path,'sizes_analyzed_ethanol.csv'), encoding='utf-8')
     except FileNotFoundError:
         print(f"The file '{mitograph_path}' could not be found.")
     except Exception as e:
@@ -119,9 +118,9 @@ for j in range(1,1269):
     
 
 
-# saving json solution from: https://stackoverflow.com/questions/26646362/numpy-array-is-not-json-serializable
+#%% saving json solution from: https://stackoverflow.com/questions/26646362/numpy-array-is-not-json-serializable
 
-save_path = "/Users/amansharma/Documents/Data/Mitochondria_masked/"+"Cell_wise_Network_prop.json"
+save_path = os.path.join(fld_path,"Cell_wise_Network_prop.json")
 
 class NumpyEncoder(json.JSONEncoder):
     """ Special json encoder for numpy types """
@@ -139,68 +138,12 @@ dumped = json.dumps(cell_wise_dict, cls=NumpyEncoder)
 
 with open(save_path,'w') as json_file:
     json.dump(dumped, json_file)
-
-
-#%% Stats and plotting
-
-
-an_csv_path  = "/Users/amansharma/Documents/Data/Mitochondria_masked/sizes_analyzed.csv"
-volume_array_array = pd.read_csv(an_csv_path)
-
-bud_vols = volume_array.loc[:,'BudVol(um3)']
-bins = np.linspace(min(bud_vols), max(bud_vols),10)
-binned_no_loops, bin_edges, binnumber = sp.stats.binned_statistic(bud_vols, volume_array.loc[:,'no. of loops'],statistic='median', bins=10)
-
-binned_deg, bin_edges, binnumber = sp.stats.binned_statistic(bud_vols, volume_array.loc[:,'average degree of nodes'],statistic='median', bins=10)
-binned_nodes, bin_edges, binnumber = sp.stats.binned_statistic(bud_vols, volume_array.loc[:,'no. of nodes'],statistic='median', bins=10)
-binned_mito_vol, bin_edges, binnumber = sp.stats.binned_statistic(bud_vols, volume_array.loc[:,'volume'],statistic='median', bins=10)
-binned_mito_length, bin_edges, binnumber = sp.stats.binned_statistic(bud_vols, volume_array.loc[:,'length'],statistic='median', bins=10)
-binned_no_cc, bin_edges, binnumber = sp.stats.binned_statistic(bud_vols, volume_array.loc[:,'number of connected components'],statistic='median', bins=10)
-
-
-
-print(bins,binned_mito_vol)
-plt.figure()
-plt.hlines(binned_mito_vol,bin_edges[:-1], bin_edges[1:],label='Mito Volume(um3)',color='g')
-plt.hlines(binned_deg, bin_edges[:-1], bin_edges[1:], label='Avg degree',color='r')
-plt.hlines(binned_nodes, bin_edges[:-1], bin_edges[1:], label='number of nodes',color='b')
-plt.xlabel('BudVol(um3)')
-plt.legend()
-
-#%% Montage making
-an_csv_path  = "/Users/amansharma/Downloads/mitograph_data.csv"
-if not os.path.exists("/Users/amansharma/Documents/Data/Mitochondria_masked/MaxProj_sorted/"):
-    os.mkdir("/Users/amansharma/Documents/Data/Mitochondria_masked/MaxProj_sorted/")
-props_arr = pd.read_csv(an_csv_path)
-bud_vols = props_arr.loc[:,'BudVol(um3)']
-bud_vols_sort = np.sort(bud_vols)
-labels = np.array(props_arr.loc[:,'label'])
-
-labels_sort = []
-i_p = -1
-for i in bud_vols_sort:
     
-    if not (i_p == i or i==0):
-        
-        mathced_ind = [j_n for j_n,j in enumerate(bud_vols) if j==i ]
-        labels_sort.append(labels[mathced_ind])
-        i_p =i
-        
-#print(labels_sort)
-count=0        
-for i_n,i in enumerate(labels_sort):
-    for j in i:
-        shutil.copyfile("/Users/amansharma/Documents/Data/Mitochondria_masked/"+str(j)+"/"+str(j)+".png",f"/Users/amansharma/Documents/Data/Mitochondria_masked/MaxProj_sorted/"+str(count)+".png")
-        if(count==326):
-            print(j,count)
-        count+=1
-
-
 #%% Network X analysis
 
 G = nx.MultiGraph()
 net_arr = []
-net_path =  "/Users/amansharma/Documents/Data/Saransh_mito_data/Mitochondria_masked_glu/"
+net_path =  "/Users/amansharma/Documents/Data/Saransh_mito_data/Mitochondria_masked_gal/"
 for i in range(1,1270):
     file_path =  os.path.join(net_path,str(i)+"/"+str(i)+".gnet")
     with open(file_path,'r') as net_file:
@@ -210,12 +153,42 @@ for i in range(1,1270):
         #print((nodes))
         G = nx.parse_adjlist(nodes, nodetype=int)
         net_arr.append(G)
-        try:
-            cyc = nx.find_cycle(G)                
-            print('Cycle size for '+str(i)+' is '+str(len(cyc))+'\n')
-            
-           
-                
-        except nx.exception.NetworkXNoCycle:
-            print('No cycle for '+str(i)+'\n')
+        
+
+#%% Network plotting Gal - 35x36; Eth - 44x46; richGlu - 44x46
+
+
+
+
+
+#%% Montage making
+an_csv_path  = "/Users/amansharma/Documents/Data/Saransh_mito_data/Mitochondria_masked_Ethanol/sizes_analyzed_ethanol.csv"
+if not os.path.exists("/Users/amansharma/Documents/Data/Saransh_mito_data/Mitochondria_masked_Ethanol/MaxProj_sorted/"):
+    os.mkdir("/Users/amansharma/Documents/Data/Saransh_mito_data/Mitochondria_masked_Ethanol/MaxProj_sorted/")
+props_arr = pd.read_csv(an_csv_path)
+bud_vols = props_arr.loc[:,'BudVol(um3)']
+bud_vols_sort = np.sort(bud_vols)
+labels = np.array(props_arr.loc[:,'label'])
+
+labels_sort = []
+i_p = -1
+for i in bud_vols_sort:
+    
+    if not (i_p == i):
+        
+        mathced_ind = [j_n for j_n,j in enumerate(bud_vols) if j==i ]
+        labels_sort.append(labels[mathced_ind])
+        i_p =i
+        
+#print(labels_sort)
+count=0        
+for i_n,i in enumerate(labels_sort):
+    for j in i:
+        shutil.copyfile("/Users/amansharma/Documents/Data/Saransh_mito_data/Mitochondria_masked_Ethanol/"+str(j)+"/"+str(j)+".png",f"/Users/amansharma/Documents/Data/Saransh_mito_data/Mitochondria_masked_Ethanol/MaxProj_sorted/"+str(count)+".png")
+        #if(count==326):
+        #    print(j,count)
+        count+=1
+
+
+
 
