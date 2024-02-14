@@ -30,7 +30,7 @@ import networkx as nx
 
 import json
 #%% Make a dictionary with the data
-fld_path = "/Users/amansharma/Documents/Data/Saransh_mito_data/Mitochondria_masked_Ethnol/"
+fld_path = "/Users/amansharma/Documents/Data/Saransh_mito_data/Mitochondria_masked_Ethanol/"
 #volume_file = "/Users/amansharma/Documents/Data/Mitochondria_masked/sizes.csv"
 """
 try:
@@ -141,30 +141,54 @@ with open(save_path,'w') as json_file:
     
 #%% Network X analysis
 
-G = nx.MultiGraph()
+
 net_arr = []
 net_path =  "/Users/amansharma/Documents/Data/Saransh_mito_data/Mitochondria_masked_gal/"
 for i in range(1,1270):
+    G = nx.MultiGraph()
     file_path =  os.path.join(net_path,str(i)+"/"+str(i)+".gnet")
     with open(file_path,'r') as net_file:
         
         nodes = net_file.readlines()
         nodes = [str(nd.split('\t')[0])+" "+str(nd.split('\t')[1]) for nd in nodes[1:]]
-        #print((nodes))
-        G = nx.parse_adjlist(nodes, nodetype=int)
-        net_arr.append(G)
         
-
+        edges = [(int(j.split()[0]),int(j.split()[1])) for j in nodes]
+        #print(edges)
+        G.add_edges_from(edges, nodetype=int)
+        net_arr.append(G)
+print(len(net_arr))        
 #%% Network plotting Gal - 35x36; Eth - 44x46; richGlu - 44x46
 
+for g_n,graph in enumerate(net_arr):
+    """
+    try:
+        cyc = nx.cycle_basis(graph)
+        print(cyc)
+    except nx.exception.NetworkXNoCycle:
+        print("no cycle")
+    """
+    
+   
+    pos = nx.circular_layout(graph)
+    nx.draw_networkx_nodes(graph, pos,label=graph.nodes, node_color = 'r', node_size = 50, alpha = 1)
+    ax = plt.gca()
+    print(len(graph.edges))
+    for e in graph.edges:
+        ax.annotate("",xy=pos[e[0]], xycoords='data',xytext=pos[e[1]], textcoords='data',
+                                    arrowprops=dict(arrowstyle="-", color="black",connectionstyle="arc3,rad=rrr".replace('rrr',str(0.15*(e[2]+1))
+                                                                    )))
+                    
+    plt.axis('off')
+    file_path =  os.path.join(net_path,str(g_n+1)+"/"+str(g_n+1)+"_graph.png")
+    print(file_path)
+    plt.savefig(file_path)
+    ax.clear()
+    plt.clf()
 
-
-
-
-#%% Montage making
-an_csv_path  = "/Users/amansharma/Documents/Data/Saransh_mito_data/Mitochondria_masked_Ethanol/sizes_analyzed_ethanol.csv"
-if not os.path.exists("/Users/amansharma/Documents/Data/Saransh_mito_data/Mitochondria_masked_Ethanol/MaxProj_sorted/"):
-    os.mkdir("/Users/amansharma/Documents/Data/Saransh_mito_data/Mitochondria_masked_Ethanol/MaxProj_sorted/")
+#%% Montage making - complies all Maxprojection or Graph figures in one folder and sorts by bud size
+an_csv_path  = "/Users/amansharma/Documents/Data/Saransh_mito_data/Mitochondria_masked_gal/sizes_analyzed_gal.csv"
+if not os.path.exists("/Users/amansharma/Documents/Data/Saransh_mito_data/Mitochondria_masked_gal/graphs/"):
+    os.mkdir("/Users/amansharma/Documents/Data/Saransh_mito_data/Mitochondria_masked_gal/graphs/")
 props_arr = pd.read_csv(an_csv_path)
 bud_vols = props_arr.loc[:,'BudVol(um3)']
 bud_vols_sort = np.sort(bud_vols)
@@ -174,7 +198,7 @@ labels_sort = []
 i_p = -1
 for i in bud_vols_sort:
     
-    if not (i_p == i):
+    if not (i_p == i or i==0):
         
         mathced_ind = [j_n for j_n,j in enumerate(bud_vols) if j==i ]
         labels_sort.append(labels[mathced_ind])
@@ -184,7 +208,7 @@ for i in bud_vols_sort:
 count=0        
 for i_n,i in enumerate(labels_sort):
     for j in i:
-        shutil.copyfile("/Users/amansharma/Documents/Data/Saransh_mito_data/Mitochondria_masked_Ethanol/"+str(j)+"/"+str(j)+".png",f"/Users/amansharma/Documents/Data/Saransh_mito_data/Mitochondria_masked_Ethanol/MaxProj_sorted/"+str(count)+".png")
+        shutil.copyfile("/Users/amansharma/Documents/Data/Saransh_mito_data/Mitochondria_masked_gal/"+str(j)+"/"+str(j)+"_graph.png",f"/Users/amansharma/Documents/Data/Saransh_mito_data/Mitochondria_masked_Ethanol/GraphPNG/"+str(count)+".png")
         #if(count==326):
         #    print(j,count)
         count+=1
