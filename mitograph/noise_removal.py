@@ -39,9 +39,9 @@ for i in range(1,121):
     
 #%% Average finder
 
-for i in range(7,10):
-    loc = "/Users/amansharma/Documents/Data/Aman_paintbrush/20231103/Run__"+str(i)+"/wait_time_30_Z_steps_120_stepV_0.005/1.tif"
-    tif_st = "/Users/amansharma/Documents/Data/Aman_paintbrush/Piezo_z_stack/20231103/Run__"+str(i)+"/wait_time_30_Z_steps_120_stepV_0.005/DOWN/TIF_stack.tif"
+for i in range(1,4):
+    loc = "/Users/amansharma/Documents/Data/Aman_paintbrush/20231113/Run__"+str(i)+"/wait_time_300_Z_steps_120_stepV_0.005/1.tif"
+    tif_st = "/Users/amansharma/Documents/Data/Aman_paintbrush/Piezo_z_stack/20231113/Run__"+str(i)+"/wait_time_300_Z_steps_120_stepV_0.005/UP/TIF_stack.tif"
     img = imread(loc)
     avg = np.average(img)
     std = np.std(img)
@@ -51,9 +51,9 @@ for i in range(7,10):
     print(avg,std)
     imgs = imread(tif_st)
     imgs = np.subtract(imgs,avg)
-    print(imgs[1,:,:])
+    #print(imgs[1,:,:])
     imgs[imgs<0] = 0
-    print(imgs[1,:,:])
+    #print(imgs[1,:,:])
     imgs = imgs.astype(np.uint8)
     print(imgs[1,:,:])
-    imwrite("/Users/amansharma/Documents/Data/Aman_paintbrush/Piezo_z_stack/20231103/Run__"+str(i)+"/wait_time_30_Z_steps_120_stepV_0.005/DOWN/Noise_rem/TIF_stack_noise_rem.tif",imgs)
+    imwrite("/Users/amansharma/Documents/Data/Aman_paintbrush/Piezo_z_stack/20231113/Run__"+str(i)+"/wait_time_300_Z_steps_120_stepV_0.005/UP/Noise_rem/TIF_stack_noise_rem.tif",imgs)
