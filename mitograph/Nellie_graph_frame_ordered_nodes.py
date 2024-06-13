@@ -85,7 +85,7 @@ def nodewise_props(tree, graph, sn,number_of_nodes,nodew_path,df_nodewise=None, 
 
     
     if((insert_loc+1)==number_of_nodes):
-        #print(df_nodewise)
+        
         df_nodewise.to_csv(nodew_path,encoding='utf-8',index=False)
         
     visited.add(sn)
@@ -99,8 +99,6 @@ def save_graph_fig(tree,graph,bf,file):
     plt.figure()
     nx.draw_kamada_kawai(graph, with_labels=True, font_weight='bold')
     
-    #pos = nx.spring_layout(graph)
-    #nx.draw_networkx_nodes(graph, pos,label=graph.nodes, node_color = 'r', node_size = 50, alpha = 1)
     ax = plt.gca()
     
     
@@ -108,7 +106,6 @@ def save_graph_fig(tree,graph,bf,file):
     file_path =  os.path.join(bf,file+'_'+str(tree.label)+'.png')
     plt.savefig(file_path,dpi=700)
     plt.title(str(file)+'_'+str(tree.label))
-    #plt.show()
     ax.clear()
     plt.clf()
     
@@ -225,7 +222,6 @@ def get_graph_prop_from_skel(bin_folder,file,pix_class,nfile=0):
 #%%Obtain a ckdTree [nearest neighbour dataframe] and graph of the skeleton file - https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.cKDTree.html
 for n_file,file in enumerate(tif_files):
     
-    #i = re.split(r'[ \- ]', file)[0]
     
     pix_calss_path = os.path.join(bin_folder,"nellie_output",file+"-ch0-im_pixel_class.ome.tif")
     pix_class = imread(pix_calss_path) #reads all the 3d coordinates and their values

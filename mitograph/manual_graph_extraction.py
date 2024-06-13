@@ -9,15 +9,12 @@ Created on Fri May 10 15:19:55 2024
 
 #%%Library load
 import re
-import time
 from nellie import logger
 from nellie.im_info.im_info import ImInfo
 from nellie.utils.general import get_reshaped_image
 import numpy as np
 import scipy.ndimage as ndi
-from scipy.spatial import cKDTree
 import pandas as pd
-from magicgui import magicgui
 import math
 from tifffile import imwrite
 from tifffile import imread
@@ -25,19 +22,8 @@ import os
 from napari.settings import get_settings
 import napari
 from natsort import natsorted
-import networkx as nx
 import matplotlib.pyplot as plt
-#%% Read all the image files - Population
-get_settings().application.ipy_interactive = True
-tif_files = []
 
-bin_folder = "/Users/amansharma/Documents/Data/Saransh_mito_data/Mitochondria_masked_richGlu_population_level/"
-tif_files = range(1,2010)
-numf = len(tif_files)
-#tif_files.append(file.removesuffix('.tif') for file in tif_file if file.endswith('.tif'))
-
-tif_files = natsorted(tif_files)
-#print(tif_files)
 #%% Read all the image files - Time Series
 # get_settings().application.ipy_interactive = True
 # tif_files = []
@@ -52,13 +38,23 @@ tif_files = natsorted(tif_files)
 # print(tif_files)
 # #print(tif_files)
 
+#%% Read all the image files - Population
+
+get_settings().application.ipy_interactive = True
+tif_files = []
+
+bin_folder = "/Users/amansharma/Documents/Data/Saransh_mito_data/Mitochondria_masked_gal/"
+tif_files = range(500,601)
+numf = len(tif_files)
+tif_files = natsorted(tif_files) #load the names of the image tiff files
+print(tif_files)
 #%%
-def get_float_pos(st):
+def get_float_pos(st): #string parsing for extracting poistion
     st = re.split(r'[ \[\]]', st)
     pos = [int(element) for element in st if element != '']
 
     return pos
-def load_image_and_skel(bf,idx=0,tp=0):
+def load_image_and_skel(bf,idx=0,tp=0): #extract the raw 3D image and the Nellie Skeleton
     
     
     global node_path
@@ -93,14 +89,15 @@ def load_image_and_skel(bf,idx=0,tp=0):
             
             
             pos_ex = nd_pdf['Position(ZXY)'].values
+            print('Extraction position: '+pos_ex)
             deg_ex = nd_pdf['Degree of Node'].values.astype(int)
             pos_ex = [get_float_pos(el) for el in pos_ex]
-            #print(pos_ex)
+            
             
             matching_indices = np.argwhere(np.all(skel_im[:, None, :] == pos_ex, axis=2))
             matching_indices = (matching_indices[:,0])
+            print(matching_indices)
             face_color_arr = ['red' for i in range(len(skel_im))]
-            #print(len(face_color_arr))
             
             for ni,i in enumerate(matching_indices):
               
@@ -111,24 +108,23 @@ def load_image_and_skel(bf,idx=0,tp=0):
 
 
         else:
-            #print('HERE')
+            
             pos_ex = []
             deg_ex = []
             nd_pdf =pd.DataFrame(columns=['Degree of Node','Position(ZXY)'])
             node_path = os.path.join(bf,str(tif_files[idx])+'/nellie_test/'+str(tif_files[idx])+'_etxracted.csv')
             face_color_arr = ['red' for i in range(len(skel_im))]
-            #print(len(face_color_arr))
+            
             nd_pdf.to_csv(node_path,index=False)    
         
         
     else: 
-        #print('HERE')
         pos_ex = []
         deg_ex = []
         nd_pdf =pd.DataFrame(columns=['Degree of Node','Position(ZXY)'])
         node_path = os.path.join(bf,str(tif_files[idx])+'/nellie_test/'+str(tif_files[idx])+'_etxracted.csv')
         face_color_arr = ['red' for i in range(len(skel_im))]
-        #print(len(face_color_arr))
+
         nd_pdf.to_csv(node_path,index=False)
     
     
@@ -142,13 +138,13 @@ def load_image_and_skel(bf,idx=0,tp=0):
 
 idx = 0
 raw_im, skel_im,fca,imp_l,imp_c = load_image_and_skel(bin_folder,idx)
-viewer = napari.view_image(raw_im, scale= [3,1,1])
-points_layer = viewer.add_points(skel_im,size=3,face_color = fca, scale= [3,1,1]) #
+viewer = napari.view_image(raw_im, scale= [3,1,1],name=str(tif_files[idx]))
+points_layer = viewer.add_points(skel_im,size=3,face_color = fca, scale= [3,1,1]) #load the skeleton in napari
 
 if(len(imp_l)!=0):
-    p_l = viewer.add_points(imp_l,size=5,face_color=imp_c,name='imp_l', scale= [3,1,1])
+    p_l = viewer.add_points(imp_l,size=5,face_color=imp_c,name='imp_l', scale= [3,1,1]) #load the highlighted points important layer
 
-@viewer.bind_key('b')
+@viewer.bind_key('b') #Mark the branching points
 def load_junction(viewer):
     ind = list(viewer.layers[1].selected_data)[0]
     
@@ -184,7 +180,7 @@ def load_junction(viewer):
         p_l = viewer.add_points(pos,size=5,face_color=[[0.,1.,0.,1.]],name='imp_l',scale= [3,1,1])
         nd_pdf.to_csv(node_path,index=False)
     
-@viewer.bind_key('t')
+@viewer.bind_key('t') #Mark the tip points
 def load_tip(viewer):
     ind = list(viewer.layers[1].selected_data)[0]
     
@@ -224,7 +220,7 @@ def load_tip(viewer):
         p_l = viewer.add_points(pos,size=5,face_color=[[0.,0.,1.,1.]],name='imp_l',scale= [3,1,1])
         nd_pdf.to_csv(node_path,index=False)
 
-@viewer.bind_key('r')
+@viewer.bind_key('r') #Remove points from the important point layer
 def remove_special_node(viewer):
     ind = list(viewer.layers[2].selected_data)
     nd_pdf0 = pd.read_csv(node_path)
@@ -245,7 +241,7 @@ def remove_special_node(viewer):
                     p_l = viewer.add_points(imp_l,size=5,face_color=imp_c,name='imp_l',scale= [3,1,1])
 
 
-@viewer.bind_key('x')
+@viewer.bind_key('x') #Remove points from skeleton itself
 def remove_node(viewer):
     
     ndw_pth = os.path.join(bin_folder,str(tif_files[idx])+'/nellie_test/'+str(tif_files[idx])+'-ome.ome_0_nodewise.csv')
@@ -254,7 +250,6 @@ def remove_node(viewer):
     ind = list(viewer.layers[1].selected_data)
     pos_s = list(viewer.layers[1].data)
     pos_s = [pos_s[pos] for pos in ind]
-    #print('Selected pos is: '+str(pos_s))
     
     skel_pos = nd_pdf1['Position(ZXY)'].values
     skel_pos = [get_float_pos(st) for st in skel_pos]
@@ -283,7 +278,7 @@ def remove_node(viewer):
                 del neigh_0[node_ind] 
                
                 negh = []
-                #print(str(int(node_num)))
+          
                 for nn in neigh_0:
                     lisst =([element for element in nn if (element != '' and element != str(int(node_num)))])
                     print(lisst)
@@ -306,30 +301,28 @@ def remove_node(viewer):
         if check : break    
                 
     
-@viewer.bind_key('n')
+@viewer.bind_key('n') #Next image
 def move_on(viewer):
     global idx
     idx = (idx+1)%numf
     viewer.layers.clear()
     raw_im, skel_im, fca,imp_l,imp_c  = load_image_and_skel(bin_folder,idx)
     
-    viewer.add_image(raw_im,scale= [3,1,1])
+    viewer.add_image(raw_im, scale= [3,1,1],name=str(tif_files[idx]))
     points_layer = viewer.add_points(skel_im,size=3,face_color = fca,scale= [3,1,1]) #
     if(len(imp_l)!=0):
         p_l = viewer.add_points(imp_l,size=5,face_color=imp_c,name='imp_l',scale= [3,1,1])
-    else:
-        viewer.layers.remove('imp_l')
+    
 
-@viewer.bind_key('p')
+@viewer.bind_key('p') # Pervious image
 def move_on(viewer):
     global idx
     idx = (idx-1)%numf
     viewer.layers.clear()
     raw_im, skel_im, fca,imp_l,imp_c  = load_image_and_skel(bin_folder,idx)
     
-    viewer.add_image(raw_im,scale= [3,1,1])
+    viewer.add_image(raw_im, scale= [3,1,1],name=str(tif_files[idx]))
     points_layer = viewer.add_points(skel_im,size=3,face_color = fca,scale= [3,1,1]) #
     if(len(imp_l)!=0):
         p_l = viewer.add_points(imp_l,size=5,face_color=imp_c,name='imp_l',scale= [3,1,1])
-    else:
-        viewer.layers.remove('imp_l')
+    
