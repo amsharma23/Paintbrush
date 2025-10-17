@@ -31,7 +31,7 @@ config_file = r'C:\Program Files\Micro-Manager-2.0\Scope+SpectraX+Laser+Cam+Grou
 #core.loadSystemConfiguration(config_file)
 #core.initializeAllDevices()
 
-save_dir = r'D:\Aman\20250728_Piezo_SJSC88_OD0.52_100x_EGrich'
+save_dir = r'G:\Piezo_and_paintbrush\20251010_Piezo_SJSC57_100x_minGal_Prime95B'
 os.makedirs(save_dir,exist_ok=True)
     
 #save_gfp = r'Acq_GFP'
@@ -94,6 +94,7 @@ core.set_property('Prime95B','ShutterMode','Pre-Exposure')
 #core.set_property('Prime95B','Gain','HIGH')
 # core.set_property('Prime95B','OUTPUT TRIGGER PRE HSYNC COUNT','2')
 # #core.set_property('Prime95B','MASTER PULSE TRIGGER SOURCE')
+#%%
 cam_props = core.get_device_property_names('Prime95B')
 for i in range(cam_props.size()):
     print(cam_props.get(i)+':'+str(core.get_property('Prime95B',cam_props.get(i))))
@@ -181,7 +182,6 @@ def set_device_prop(g_l,cy_l,las_l, exp_t,x_p,y_p,z_p,top_left_x,top_left_y,x_si
     # core.set_property('Prime95B','Trigger','NORMAL')
     core.set_roi('Prime95B',top_left_x,top_left_y,x_size,y_size)
     core.set_exposure('Prime95B',exp_t)
-    
     #Confocal
     core.set_property('CSUW1-Shutter','State','Open')
     core.set_property('CSUW1-Drive Speed','State','4000')
@@ -920,7 +920,7 @@ def piezo_zstack_ts_NIDAQ(tps,s_v,z_p,num_z_im,exp_t=100):
     core.sleep(100)
     
     core.set_property('CSUW1-Bright Field','BrightFieldPort','Bright Field')#Switch CSUW1 port to BF
-    core.set_property('CSUW1-Filter Wheel-1','State','0')
+    core.set_property('CSUW1-Filter Wheel-1','State','4')
     core.set_property('CSUW1-Disk','State','2')
     core.set_property('CSUW1-Drive Speed','Run','Off')#Turn disk rotation OFF
     core.wait_for_device('CSUW1-Drive Speed')
@@ -1077,8 +1077,8 @@ core.stop_sequence_acquisition()
 camera_exposure = 150.0
 print(datetime.now())
 
-gfP_light_level = '0.0'
-mch_light_level = '17.0'
+gfP_light_level = '0'
+mch_light_level = '4'
 laser_pow_level = '0.8'
 
 x_pos = core.get_x_position()
@@ -1087,10 +1087,11 @@ z_pos = core.get_position()
 
 
 #laser centre ~ [2326,1230]
-roi_x_sz = 156                
-roi_y_sz = 133
-roi_top_lf_x = 541       
-roi_top_lf_y = 471
+roi_x_sz = 170                  
+roi_y_sz = 170
+roi_top_lf_x = 582       
+roi_top_lf_y = 448
+
 fps = 200 #limit set by exposure time as fps ~ 5ms
 
 
@@ -1118,10 +1119,10 @@ set_device_prop(mch_light_level,gfP_light_level , laser_pow_level, camera_exposu
 #images = long_term_single_shot([x_pos], [y_pos], z_pos,laser_exposure_time,time_int_in_min,num_t_steps)
 #long_term_single_shot(x_pos_arr,y_pos_arr,z_p,las_on_time,time_int_in_min,num_of_t_steps)
 
-num_time_points = 150
-z_steps = 30
+num_time_points = 1000
+z_steps = 24
 wait_time =  0#in miliseconds
-step_v = 7/z_steps # corresonds to 0.005~50nm; 6um
+step_v = 6/z_steps # corresonds to 0.005~50nm; 6um
 
 
 
@@ -1145,18 +1146,16 @@ print('Whole time: '+str(en-st))
 #     image_disp_pz_ts_zstack(imgs,save_d,ni,len(imgs))
 #     print('Done')
 
-#%% Save NIDAQ z-stacks TS
 
-print(len(images))
-#%%Saving images
-run = '10'
+#%Saving images
+run = '4'
 save_d = os.path.join(save_dir,'Run_'+str(run))
-save_d = os.path.join(save_d,'wait_time_'+str(wait_time)+'_exposure_time'+str(camera_exposure)+'_Z_steps_'+str(z_steps)+'_stepV_'+str(step_v)+'_number_of_TPs_'+str(num_time_points)+'_whole_time_'+str(en-st))
+save_d = os.path.join(save_d, f'wait_time_{wait_time:.2f}_exposure_time{camera_exposure:.2f}_Z_steps_{z_steps:.2f}_stepV_{step_v:.2f}_number_of_TPs_{num_time_points:.2f}_whole_time_{en-st:.2f}')
 if(not(os.path.exists(save_d))):
     os.makedirs(save_d)
 print(save_d)
 for ni,i in enumerate(images):    
-    image_disp_pz_ts_zstack(i,save_d,ni,30)
+    image_disp_pz_ts_zstack(i,save_d,ni,24)
 print('Done Saving')    
 
 # %%
